@@ -1,7 +1,28 @@
 import sqlite3
 import hashlib
+import re
 
 NOMBRE_BD = "escaneo_puertos.db"
+
+PALABRAS_PROHIBIDAS = [
+    "CREATE", "ALTER", "DROP", 
+    "SELECT", "INSERT", "UPDATE", "DELETE"
+]
+
+SIMBOLOS_PROHIBIDOS = ["'", '"', "--", ";", "/*", "*/", "="]
+
+def validar_entrada_segura(texto):
+    texto_str = str(texto)
+    
+    for simbolo in SIMBOLOS_PROHIBIDOS:
+        if simbolo in texto_str:
+            return False, f"Símbolo no permitido: {simbolo}"
+            
+    for palabra in PALABRAS_PROHIBIDAS:
+        if re.search(rf"\b{palabra}\b", texto_str, re.IGNORECASE):
+            return False, f"Comando SQL bloqueado: {palabra}"
+            
+    return True, ""
 
 def conectar():
     return sqlite3.connect(NOMBRE_BD)

@@ -20,6 +20,14 @@ class VentanaPrincipal:
         for widget in self.root.winfo_children():
             widget.destroy()
 
+    def verificar_seguridad_campos(self, *campos):
+        for campo in campos:
+            es_seguro, motivo = bd.validar_entrada_segura(campo)
+            if not es_seguro:
+                messagebox.showerror("Alerta SQL Injection", f"Operación bloqueada.\n{motivo}")
+                return False
+        return True
+
     def pantalla_login(self):
         self.limpiar()
 
@@ -60,6 +68,9 @@ class VentanaPrincipal:
             messagebox.showwarning("Aviso", "Debe completar todos los campos.")
             return
 
+        if not self.verificar_seguridad_campos(user, clave):
+            return
+
         conn = bd.conectar()
         cursor = conn.cursor()
         try:
@@ -75,6 +86,9 @@ class VentanaPrincipal:
     def iniciar_sesion(self):
         user = self.txt_user.get().strip()
         clave = self.txt_pass.get().strip()
+
+        if not self.verificar_seguridad_campos(user, clave):
+            return
 
         conn = bd.conectar()
         cursor = conn.cursor()
@@ -124,7 +138,6 @@ class VentanaPrincipal:
         panel_tablas = tk.Frame(self.root, bg="#eaecee")
         panel_tablas.pack(fill="both", expand=True, padx=12, pady=(0, 12))
 
-        # Tabla Resumen Escaneo
         f_izq = tk.LabelFrame(panel_tablas, text=" Historial (RESUMEN_ESCANEO) ", bg="#eaecee", font=("Arial", 9, "bold"))
         f_izq.pack(side="left", fill="both", expand=True, padx=(0, 5))
 
@@ -138,7 +151,6 @@ class VentanaPrincipal:
         self.tabla_resumen.pack(fill="both", expand=True, padx=5, pady=5)
         self.tabla_resumen.bind("<<TreeviewSelect>>", self.mostrar_detalle)
 
-        # Tabla Puertos Abiertos
         f_der = tk.LabelFrame(panel_tablas, text=" Detalle (PUERTOS_ABIERTOS) ", bg="#eaecee", font=("Arial", 9, "bold"))
         f_der.pack(side="right", fill="both", expand=True, padx=(5, 0))
 
@@ -157,12 +169,16 @@ class VentanaPrincipal:
 
     def escanear(self):
         host = self.txt_ip.get().strip()
+
+        if not self.verificar_seguridad_campos(host, self.txt_p1.get(), self.txt_p2.get()):
+            return
+
         try:
             ip = socket.gethostbyname(host)
             p_ini = int(self.txt_p1.get())
             p_fin = int(self.txt_p2.get())
         except Exception:
-            messagebox.showerror("Error", "Verifique la dirección IP y los puertos ingresados.")
+            messagebox.showerror("Error", "Verifique la dirección IP y que los puertos sean números enteros.")
             return
 
         total = (p_fin - p_ini) + 1
